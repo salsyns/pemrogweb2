@@ -23,10 +23,10 @@
     <h1>Detail Pesanan</h1>
 
     <?php
-    $servername = "localhost";
-    $username = "root";
-    $password = "";
-    $dbname = "dodol";
+    $servername = getenv('localhost');
+    $username = getenv('root');
+    $password = getenv('');
+    $dbname = getenv('dodol');
 
     $conn = new mysqli($servername, $username, $password, $dbname);
 

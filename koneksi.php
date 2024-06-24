@@ -1,8 +1,8 @@
 <?php
-$host = 'localhost';
-$username = 'root';
-$password = '';
-$dbname = 'dodol';
+$host = getenv('localhost');
+$username = getenv('root');
+$password = getenv('');
+$dbname = getenv('dodol');
 
 $conn = mysqli_connect($host, $username, $password, $dbname);
 
