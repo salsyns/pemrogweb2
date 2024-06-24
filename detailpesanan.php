@@ -23,10 +23,10 @@
     <h1>Detail Pesanan</h1>
 
     <?php
-    $servername = getenv('localhost');
-    $username = getenv('root');
-    $password = getenv('');
-    $dbname = getenv('dodol');
+    $host = getenv('DB_HOST');
+    $username = getenv('DB_USER');
+    $password = getenv('DB_PASS');
+    $dbname = getenv('DB_NAME');
 
     $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -34,12 +34,6 @@
         die("Koneksi gagal: " . $conn->connect_error);
     }
 
-    // Asumsikan Anda telah menyimpan pesanan baru di sini
-    // Contoh menyimpan pesanan baru:
-    // $sql_insert = "INSERT INTO pesanan_produk (id_pelanggan, nama_produk, jumlah, harga_per_pcs) VALUES (1, 'Produk A', 2, 50000)";
-    // $conn->query($sql_insert);
-    
-    // Dapatkan id_pelanggan dari pesanan terakhir
     $sql_last_order = "SELECT id_pelanggan FROM pesanan_produk ORDER BY id_pesanan DESC LIMIT 1";
     $result_last_order = $conn->query($sql_last_order);
     $last_pelanggan = $result_last_order->fetch_assoc()['id_pelanggan'];
