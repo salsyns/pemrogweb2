@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pemesanan Dodol</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Aplikasi Pemesanan Dodol</h1>
+        <h2>Silahkan Pilih Menu Dodol Yang Ingin Dibeli</h2>
+        <div class="menu">
+            <div class="item-menu">
+                <div class="item-content">
+                    <img src="img/duren.jpeg" alt="Dodol Duren">
+                    <p>Dodol Duren</p>
+                    <p>Rp. 21.000</p>
+                </div>
+                <button onclick="tambahPesanan('Dodol Duren', 21000)">Tambah Pesanan</button>
+            </div>
+            <div class="item-menu">
+                <div class="item-content">
+                    <img src="img/wijen.jpg" alt="Dodol Wijen">
+                    <p>Dodol Wijen</p>
+                    <p>Rp. 18.000</p>
+                </div>
+                <button onclick="tambahPesanan('Dodol Wijen', 18000)">Tambah Pesanan</button>
+            </div>
+            <div class="item-menu">
+                <div class="item-content">
+                    <img src="img/original.jpeg" alt="Dodol Original">
+                    <p>Dodol Original</p>
+                    <p>Rp. 18.000</p>
+                </div>
+                <button onclick="tambahPesanan('Dodol Original', 18000)">Tambah Pesanan</button>
+            </div>
+        </div>
+        <div class="pesanan">
+            <h2>Pesanan Anda</h2>
+            <form id="formPesanan" method="POST">
+                <label for="namaPelanggan">Nama Pelanggan:</label><br>
+                <input type="text" id="namaPelanggan" name="namaPelanggan" required><br>
+                <label for="emailPelanggan">Email:</label><br>
+                <input type="email" id="emailPelanggan" name="emailPelanggan" required><br>
+                <label for="nomorHpPelanggan">Nomor HP:</label><br>
+                <input type="text" id="nomorHpPelanggan" name="nomorHpPelanggan" required><br>
+                <label for="alamatPelanggan">Alamat:</label><br>
+                <textarea id="alamatPelanggan" name="alamatPelanggan" required></textarea><br>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Produk</th>
+                            <th>Jumlah</th>
+                            <th>Harga per pcs</th>
+                            <th>Total</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemPesanan"></tbody>
+                    <tfoot id="tfootPesanan"></tfoot>
+                </table>
+                <button type="submit">Simpan Pesanan</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let pesanan = [];
+
+        function tambahPesanan(nama, harga) {
+            const item = pesanan.find(p => p.nama === nama);
+            item ? item.jumlah++ : pesanan.push({ nama, harga, jumlah: 1 });
+            perbaruiTabelPesanan();
+        }
+
+        function perbaruiTabelPesanan() {
+            const tbody = document.getElementById('itemPesanan');
+            const tfoot = document.getElementById('tfootPesanan');
+            tbody.innerHTML = '';
+            let totalHarga = 0;
+
+            pesanan.forEach((item, index) => {
+                const totalItem = item.harga * item.jumlah;
+                totalHarga += totalItem;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.nama}</td>
+                        <td><input type="number" value="${item.jumlah}" min="1" data-index="${index}" onchange="ubahJumlah(this)"></td>
+                        <td>${item.harga}</td>
+                        <td>${totalItem}</td>
+                        <td><button onclick="hapusPesanan(${index})">Hapus</button></td>
+                    </tr>
+                `;
+            });
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="3">Total Harga Keseluruhan:</td>
+                    <td id="totalHarga" colspan="2">Rp. ${totalHarga}</td>
+                </tr>
+            `;
+        }
+
+        function ubahJumlah(input) {
+            pesanan[input.dataset.index].jumlah = parseInt(input.value);
+            perbaruiTabelPesanan();
+        }
+
+        function hapusPesanan(index) {
+            pesanan.splice(index, 1);
+            perbaruiTabelPesanan();
+        }
+
+        document.getElementById('formPesanan').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const namaPelanggan = document.getElementById('namaPelanggan').value;
+            const emailPelanggan = document.getElementById('emailPelanggan').value;
+            const alamatPelanggan = document.getElementById('alamatPelanggan').value;
+            const nomorHpPelanggan = document.getElementById('nomorHpPelanggan').value;
+
+            if (namaPelanggan && emailPelanggan && alamatPelanggan && nomorHpPelanggan && pesanan.length > 0) {
+                const data = {
+                    namaPelanggan: namaPelanggan,
+                    emailPelanggan: emailPelanggan,
+                    alamatPelanggan: alamatPelanggan,
+                    nomorHpPelanggan: nomorHpPelanggan,
+                    pesanan: pesanan
+                };
+
+                fetch('simpan_pesanan.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Pesanan disimpan!');
+                        pesanan = [];
+                        perbaruiTabelPesanan();
+                        document.getElementById('namaPelanggan').value = '';
+                        document.getElementById('emailPelanggan').value = '';
+                        document.getElementById('alamatPelanggan').value = '';
+                        document.getElementById('nomorHpPelanggan').value = '';
+                        document.getElementById('totalHarga').innerText = '0';
+                        window.location.href = 'detailpesanan.php';
+                    } else {
+                        alert('Gagal menyimpan pesanan!');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan saat menyimpan pesanan!');
+                });
+
+            } else {
+                alert('Mohon isi semua data pelanggan dan tambahkan minimal satu item!');
+            }
+        });
+    </script>
+</body>
+</html>
