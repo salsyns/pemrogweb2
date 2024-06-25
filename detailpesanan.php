@@ -34,16 +34,18 @@
         die("Koneksi gagal: " . $conn->connect_error);
     }
 
-    $sql_last_order = "SELECT id_pelanggan FROM pesanan_produk ORDER BY id_pesanan DESC LIMIT 1";
+    // Mendapatkan pesanan terakhir
+    $sql_last_order = "SELECT id_pelanggan FROM pesanan ORDER BY id DESC LIMIT 1";
     $result_last_order = $conn->query($sql_last_order);
     $last_pelanggan = $result_last_order->fetch_assoc()['id_pelanggan'];
 
-    $sql = "SELECT pp.nama_produk, pp.jumlah, pp.harga_per_pcs, (pp.jumlah * pp.harga_per_pcs) AS total, 
-                    p.nama_pelanggan, p.email, p.alamat, p.nomor_hp
-            FROM pesanan_produk pp
-            LEFT JOIN pelanggan p ON pp.id_pelanggan = p.id_pelanggan
-            WHERE pp.id_pelanggan = $last_pelanggan
-            ORDER BY p.nama_pelanggan ASC";
+    // Mendapatkan detail pesanan pelanggan terakhir
+    $sql = "SELECT p.nama AS nama_pelanggan, p.email, p.alamat, p.nomor_hp, 
+                   ps.nama_produk, ps.jumlah, ps.harga_per_pcs, (ps.jumlah * ps.harga_per_pcs) AS total
+            FROM pelanggan p
+            JOIN pesanan ps ON p.id = ps.id_pelanggan
+            WHERE p.id = $last_pelanggan
+            ORDER BY p.nama ASC";
 
     $result = $conn->query($sql);
 
@@ -67,26 +69,12 @@
         echo '</thead>';
         echo '<tbody>';
 
-        $row = $result->fetch_assoc();
-        echo '<tr>';
-        echo '<td>' . htmlspecialchars($row['nama_pelanggan']) . '</td>';
-        echo '<td>' . htmlspecialchars($row['email']) . '</td>';
-        echo '<td>' . htmlspecialchars($row['alamat']) . '</td>';
-        echo '<td>' . htmlspecialchars($row['nomor_hp']) . '</td>';
-        echo '<td>' . htmlspecialchars($row['nama_produk']) . '</td>';
-        echo '<td>' . $row['jumlah'] . '</td>';
-        echo '<td>Rp. ' . number_format($row['harga_per_pcs'], 0, ',', '.') . '</td>';
-        echo '<td>Rp. ' . number_format($row['total'], 0, ',', '.') . '</td>';
-        echo '</tr>';
-
-        $totalHargaPelanggan += $row['total'];
-
         while ($row = $result->fetch_assoc()) {
             echo '<tr>';
-            echo '<td></td>';
-            echo '<td></td>';
-            echo '<td></td>';
-            echo '<td></td>';
+            echo '<td>' . htmlspecialchars($row['nama_pelanggan']) . '</td>';
+            echo '<td>' . htmlspecialchars($row['email']) . '</td>';
+            echo '<td>' . htmlspecialchars($row['alamat']) . '</td>';
+            echo '<td>' . htmlspecialchars($row['nomor_hp']) . '</td>';
             echo '<td>' . htmlspecialchars($row['nama_produk']) . '</td>';
             echo '<td>' . $row['jumlah'] . '</td>';
             echo '<td>Rp. ' . number_format($row['harga_per_pcs'], 0, ',', '.') . '</td>';

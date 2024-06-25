@@ -1,36 +1,50 @@
 <?php
-include('koneksi.php');
+header('Content-Type: application/json');
 
-$data = json_decode(file_get_contents('php://input'), true);
+$host = getenv('DB_HOST');
+$username = getenv('DB_USER');
+$password = getenv('DB_PASS');
+$dbname = getenv('DB_NAME');
 
-if (!isset($data['namaPelanggan']) || !isset($data['emailPelanggan']) || !isset($data['alamatPelanggan']) || !isset($data['nomorHpPelanggan']) || !isset($data['pesanan'])) {
-    die(json_encode(['success' => false, 'message' => 'Data tidak lengkap.']));
-}
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-$namaPelanggan = $data['namaPelanggan'];
-$emailPelanggan = $data['emailPelanggan'];
-$alamatPelanggan = $data['alamatPelanggan'];
-$nomorHpPelanggan = $data['nomorHpPelanggan'];
+    $input = json_decode(file_get_contents('php://input'), true);
 
-$sqlPelanggan = "INSERT INTO pelanggan (nama_pelanggan, email, alamat, nomor_hp) VALUES ('$namaPelanggan', '$emailPelanggan', '$alamatPelanggan', '$nomorHpPelanggan')";
-if (mysqli_query($conn, $sqlPelanggan)) {
-    $idPelanggan = mysqli_insert_id($conn);
+    $namaPelanggan = $input['namaPelanggan'];
+    $emailPelanggan = $input['emailPelanggan'];
+    $nomorHpPelanggan = $input['nomorHpPelanggan'];
+    $alamatPelanggan = $input['alamatPelanggan'];
+    $pesanan = $input['pesanan'];
 
-    $pesanan = $data['pesanan'];
+    // Log data yang diterima untuk debugging
+    file_put_contents('log.txt', print_r($input, true), FILE_APPEND);
+
+    // Simpan data pelanggan
+    $stmt = $pdo->prepare("INSERT INTO pelanggan (nama_pelanggan, email, nomor_hp, alamat) VALUES (:nama_pelanggan, :email, :nomor_hp, :alamat)");
+    $stmt->bindParam(':nama_pelanggan', $namaPelanggan);
+    $stmt->bindParam(':email', $emailPelanggan);
+    $stmt->bindParam(':nomor_hp', $nomorHpPelanggan);
+    $stmt->bindParam(':alamat', $alamatPelanggan);
+    $stmt->execute();
+
+    $idPelanggan = $pdo->lastInsertId();
+
+    // Simpan data pesanan
     foreach ($pesanan as $item) {
-        $namaProduk = $item['nama'];
-        $jumlah = $item['jumlah'];
-        $hargaPerPcs = $item['harga'];
-        $total = $hargaPerPcs * $jumlah;
-
-        $sqlPesanan = "INSERT INTO pesanan_produk (id_pelanggan, nama_produk, jumlah, harga_per_pcs, total) VALUES ($idPelanggan, '$namaProduk', $jumlah, $hargaPerPcs, $total)";
-        mysqli_query($conn, $sqlPesanan);
+        $stmt = $pdo->prepare("INSERT INTO pesanan (id_pelanggan, nama_produk, jumlah, harga_per_pcs, total) VALUES (:id_pelanggan, :nama_produk, :jumlah, :harga_per_pcs, :total)");
+        $stmt->bindParam(':id_pelanggan', $idPelanggan);
+        $stmt->bindParam(':nama_produk', $item['nama']);
+        $stmt->bindParam(':jumlah', $item['jumlah']);
+        $stmt->bindParam(':harga_per_pcs', $item['harga']);
+        $stmt->bindParam(':total', $total = $item['harga'] * $item['jumlah']);
+        $stmt->execute();
     }
 
     echo json_encode(['success' => true, 'message' => 'Pesanan berhasil disimpan.']);
-} else {
-    echo json_encode(['success' => false, 'message' => 'Gagal menyimpan data pelanggan.']);
+} catch (PDOException $e) {
+    file_put_contents('log.txt', $e->getMessage(), FILE_APPEND); // Log error message
+    echo json_encode(['success' => false, 'message' => 'Gagal menyimpan pesanan: ' . $e->getMessage()]);
 }
-
-mysqli_close($conn);
 ?>
