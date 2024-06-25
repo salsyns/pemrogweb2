@@ -35,7 +35,7 @@ try {
     foreach ($pesanan as $item) {
         $stmt = $pdo->prepare("INSERT INTO pesanan (id_pelanggan, nama_produk, jumlah, harga_per_pcs, total) VALUES (:id_pelanggan, :nama_produk, :jumlah, :harga_per_pcs, :total)");
         $stmt->bindParam(':id_pelanggan', $idPelanggan);
-        $stmt->bindParam(':nama_produk', $item['nama']);
+        $stmt->bindParam(':nama_produk', $item['nama_pelanggan']);
         $stmt->bindParam(':jumlah', $item['jumlah']);
         $stmt->bindParam(':harga_per_pcs', $item['harga']);
         $stmt->bindParam(':total', $total = $item['harga'] * $item['jumlah']);
